@@ -6,6 +6,7 @@ pipeline {
     // Declare a variable to track test results
     environment {
         TEST_FAILED = false
+        HOSTED_URL = "https://peris-gallery.onrender.com/"
     }
     stages {
         stage("Node Version") {
@@ -49,6 +50,13 @@ pipeline {
         }
     }
     post {
+       success {
+            script { 
+                
+                slackSend(channel: '#PERIS_IP1',
+                          message: "Build Successful! \nBuild ID: ${env.BUILD_ID}\nView the deployed site here: ${HOSTED_URL}")
+            }
+        }
         failure {
             script {
                 if (TEST_FAILED) {
@@ -61,11 +69,7 @@ pipeline {
                         ], 
                         replyTo: '$DEFAULT_REPLYTO',
                         to: '$DEFAULT_RECIPIENTS'
-                  //   withCredentials([string(credentialsId: 'notification_email', variable: 'NOTIFICATION_EMAIL')]) {
-                  //       mail to: "${NOTIFICATION_EMAIL}",
-                  //            subject: "Test Failure: ${currentBuild.fullDisplayName}",
-                  //            body: "The tests have failed.\nCheck Jenkins for details: ${env.BUILD_URL}"
-                  //   }
+                  
                 }
             }
         }
