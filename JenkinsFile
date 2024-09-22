@@ -52,11 +52,20 @@ pipeline {
         failure {
             script {
                 if (TEST_FAILED) {
-                    withCredentials([string(credentialsId: 'notification_email', variable: 'NOTIFICATION_EMAIL')]) {
-                        mail to: "${NOTIFICATION_EMAIL}",
-                             subject: "Test Failure: ${currentBuild.fullDisplayName}",
-                             body: "The tests have failed.\nCheck Jenkins for details: ${env.BUILD_URL}"
-                    }
+                   emailext subject: '$DEFAULT_SUBJECT',
+                        body: '$DEFAULT_CONTENT',
+                        recipientProviders: [
+                            [$class: 'CulpritsRecipientProvider'],
+                            [$class: 'DevelopersRecipientProvider'],
+                            [$class: 'RequesterRecipientProvider'] 
+                        ], 
+                        replyTo: '$DEFAULT_REPLYTO',
+                        to: '$DEFAULT_RECIPIENTS'
+                  //   withCredentials([string(credentialsId: 'notification_email', variable: 'NOTIFICATION_EMAIL')]) {
+                  //       mail to: "${NOTIFICATION_EMAIL}",
+                  //            subject: "Test Failure: ${currentBuild.fullDisplayName}",
+                  //            body: "The tests have failed.\nCheck Jenkins for details: ${env.BUILD_URL}"
+                  //   }
                 }
             }
         }
