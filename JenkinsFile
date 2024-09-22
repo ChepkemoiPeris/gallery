@@ -30,13 +30,14 @@ pipeline{
            }
        }
        
-    stage('Deploy to Heroku'){
+    stage('Deploy to Render'){
       
       steps{
-         echo "Deploying to heroku"
-         //      withCredentials([usernameColonPassword(credentialsId: '21f405c0-3c9b-4ae5-8370-4c610b17ced8', variable: 'HEROKU_CREDENTIALS')]) {
-         //           sh 'git push https://${HEROKU_CREDENTIALS}@git.heroku.com/moringa-project.git master' }
-         //   
+           withCredentials([string(credentialsId: 'render-deploy-hook', variable: 'RENDER_DEPLOY_HOOK')]) {
+                    sh """
+                    curl -X POST ${RENDER_DEPLOY_HOOK}
+                    """
+                } 
          }
        }
 
