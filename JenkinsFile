@@ -1,47 +1,64 @@
-pipeline{
+pipeline {
     agent any
-    tools{
+    tools {
         nodejs "node"
     }
-    stages{
-        stage("node version"){
-            steps{
+    // Declare a variable to track test results
+    environment {
+        TEST_FAILED = false
+    }
+    stages {
+        stage("Node Version") {
+            steps {
                 sh 'node --version'
             }
         }
-        stage("Clone repo"){
-            steps{
+        stage("Clone Repo") {
+            steps {
                 git(
                    url: "https://github.com/ChepkemoiPeris/gallery.git",
                    branch: "master"
                )
-
             }
         }
-         
-        stage("Install npm"){
-            steps{
+        stage("Install npm") {
+            steps {
                 sh 'npm install'
             }
         }
-      stage('Tests'){
-           steps{
-                echo "Running tests"
-           }
-       }
-       
-    stage('Deploy to Render'){
-      
-      steps{
-           withCredentials([string(credentialsId: 'render-deploy-hook', variable: 'RENDER_DEPLOY_HOOK')]) {
+        stage('Run Tests') {
+            steps {
+                script {
+                    try {
+                        sh 'npm test'
+                    } catch (Exception e) {
+                        TEST_FAILED = true
+                        error("Tests failed!")
+                    }
+                }
+            }
+        }
+        stage('Deploy to Render') {
+            steps {
+                withCredentials([string(credentialsId: 'render-deploy-hook', variable: 'RENDER_DEPLOY_HOOK')]) {
                     sh """
                     curl -X POST ${RENDER_DEPLOY_HOOK}
                     """
                 } 
-         }
-       }
-
-
-
+            }
+        }
+    }
+    post {
+        failure {
+            script {
+                if (TEST_FAILED) {
+                    withCredentials([string(credentialsId: 'notification_email', variable: 'NOTIFICATION_EMAIL')]) {
+                        mail to: "${NOTIFICATION_EMAIL}",
+                             subject: "Test Failure: ${currentBuild.fullDisplayName}",
+                             body: "The tests have failed.\nCheck Jenkins for details: ${env.BUILD_URL}"
+                    }
+                }
+            }
+        }
     }
 }
